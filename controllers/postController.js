@@ -1,4 +1,7 @@
 const Post = require('../models/Post')
+const sendgrid = require('@sendgrid/mail')
+sendgrid.setApiKey(process.env.SENDGRIDAPIKEY)
+
 
 exports.apiCreate = function(req, res) {
   let post = new Post(req.body,req.apiUser._id)
@@ -17,6 +20,13 @@ exports.viewCreateScreen = function(req, res) {
 exports.create = function(req, res) {
   let post = new Post(req.body, req.session.user._id)
   post.create().then(function(newId) {
+    sendgrid.send({
+      to:'gspeckiii@proton.me',
+      from:'g.peck.iii@gmail.com',
+      subject:`New Post from ${req.session.user.username}`,
+      text:"${req.body.title}",
+      HTML:`<h1>${req.body.title}</h1>`
+    })
     req.flash("success", "New post successfully created.")
     req.session.save(() => res.redirect(`/post/${newId}`))
   }).catch(function(errors) {
