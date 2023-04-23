@@ -23,9 +23,9 @@ exports.create = function(req, res) {
     sendgrid.send({
       to:'gspeckiii@proton.me',
       from:'g.peck.iii@gmail.com',
-      subject:`New Post from ${req.session.user.username}`,
-      text:"${req.body.title}",
-      HTML:`<h1>${req.body.title}</h1>`
+      subject:`New Post from ${req.session.user.username} Titled ${req.body.title}`,
+      text:`${req.body.body}`,
+      HTML:`<p>${req.body.body}</p>`
     })
     req.flash("success", "New post successfully created.")
     req.session.save(() => res.redirect(`/post/${newId}`))
