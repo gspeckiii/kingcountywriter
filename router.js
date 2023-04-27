@@ -3,6 +3,7 @@ const router = express.Router()
 const userController = require('./controllers/userController')
 const postController = require('./controllers/postController')
 const followController = require('./controllers/followController')
+const passwordResetController = require('./controllers/passwordResetController')
 
 // user related routes
 router.get('/', userController.home)
@@ -11,6 +12,7 @@ router.post('/login', userController.login)
 router.post('/logout', userController.logout)
 router.post('/doesUsernameExist',userController.doesUsernameExist)
 router.post('/doesEmailExist',userController.doesEmailExist)
+
 
 // profile related routes
 router.get('/profile/:username', userController.ifUserExists, userController.sharedProfileData, userController.profilePostsScreen)
@@ -30,4 +32,13 @@ router.post('/search', postController.search)
 router.post('/addFollow/:username', userController.mustBeLoggedIn, followController.addFollow)
 router.post('/removeFollow/:username', userController.mustBeLoggedIn, followController.removeFollow)
 
+//password reset routes
+router.get('/passwordReset', (req, res) => {
+    res.render('password-reset', { csrfToken: req.csrfToken() });
+  });
+  
+  router.post('/passwordReset', passwordResetController.passwordReset);
+
+  router.get('/password-reset-password')
+  router.post('/password-reset-password',passwordResetController.setPassword)
 module.exports = router

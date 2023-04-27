@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs")
 const usersCollection = require('../db').db().collection("users")
 const validator = require("validator")
+const crypto = require("crypto")
 const md5 = require('md5')
 
 let User = function(data, getAvatar) {
@@ -115,6 +116,12 @@ User.findByUsername = function(username) {
   })
 }
 
+
+
+User.findByEmail = async function(email) {
+  return await this.findOne({ email });
+};
+
 User.doesEmailExist = function(email){
   return new Promise(async function(resolve,reject){
     if(typeof(email)!="string"){
@@ -130,4 +137,11 @@ User.doesEmailExist = function(email){
 
   })
 }
+
+
+
+// Generate a password reset token and set its expiration time
+
+
+
 module.exports = User
