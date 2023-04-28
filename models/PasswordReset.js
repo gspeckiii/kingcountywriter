@@ -24,18 +24,14 @@ let PasswordReset = function(data) {
         
             const resetHash = passwordHash.resetHash;
             const resetToken = passwordHash.resetToken;
-            console.log("hash: "+ resetHash + "  resetToken: " + resetToken);
             const expiration = Date.now() + 3600000; // 1 hour from now
             const lostUser = await usersCollection.findOne({email: this.data.email});
-            console.log(lostUser);
+        
             if (lostUser && resetToken) {
                 await PasswordReset.delete(lostUser._id)
-                    .then((message) => {
-                        console.log(message);
-                    })
                     .catch((error) => {
-                        console.log("delete fail", error);
-                        reject(error); // reject with error
+                        this.errors.push("delete fail", error);
+                        reject(this.errors); // reject with error
                     });
 
                 this.data = {
@@ -50,9 +46,11 @@ let PasswordReset = function(data) {
             } else {
                 this.errors.push("no email by that name");
                 reject(this.errors); // reject with error
+
             }
         } catch(error) {
-            reject(error); // reject with error
+            this.errors.push("Db not connecting",error);
+            reject(this.errors); // reject with error
         }
     });
 }
@@ -70,8 +68,6 @@ let PasswordReset = function(data) {
     const resetHash = await bcrypt.hash(resetToken, salt);
   
     // You can now store the resetHash in your database and send the resetToken to the user's email
-    console.log('Reset token:', resetToken);
-    console.log('Reset hash:', resetHash);
   
     return { resetToken, resetHash };
   }
@@ -80,9 +76,11 @@ let PasswordReset = function(data) {
     return new Promise(async (resolve, reject) => {
       try {
         await passwordResetCollection.deleteMany({ userId: new ObjectId(currentUserId) });
-        resolve(console.log("delete success"));
+        resolve();
       } catch (error) {
-        reject(new Error("delete fail: " + error.message));
+        this.errors.push("Db not connecting",error);
+        reject(this.errors); // reject with error
+       
       }
     });
   };
@@ -90,22 +88,22 @@ let PasswordReset = function(data) {
 
   PasswordReset.prototype.setPassword = async function() {
     try {
+        if (this.data.newPassword.length < 12 || this.data.newPassword.length >50 ){
+            throw  this.errors.push("Password needs to be greater than 12 characters and less than 50");
+        }
+        if(this.data.emailedToken.length != 16){
+            throw this.errors.push("Token did not have the correct number of characters");
+        }
+      
         const resetData = await PasswordReset.findUserHash(this.data.userId);
-        console.log(this.data.userId)
+        
         // Check if resetData exists
         if (!resetData) {
-            throw new Error("No reset data found for this user");
+            throw this.errors.push("User Hash not found")
         }
 
-        console.log(resetData.hash);
-        console.log(resetData.expiration);
-        console.log(this.data.emailedToken);
-        
         const currentTime = Date.now();
-    
-
         const isValid = await PasswordReset.checkUserHash(this.data.emailedToken,resetData.hash);
-        console.log(isValid);
 
         if (isValid && currentTime <= resetData.expiration) {
             // Save the new password to the database
@@ -116,11 +114,11 @@ let PasswordReset = function(data) {
             );
             return result;
         } else {
-            throw new Error("Invalid token or expired link");
+            throw this.errors.push("Invalid token or expired link");
         }
-    } catch (error) {
-        console.error(error);
-        throw error;
+    } catch (e) {
+        throw this.errors.push("set password failed")
+
     }
 };
      
@@ -140,8 +138,8 @@ PasswordReset.checkUserHash = function(emailedToken,resetHash){
             const isValid = await bcrypt.compare(emailedToken, resetHash)
             resolve(isValid)
         }catch(error){
-            console.log(error.message)
-            reject(new Error("checkUserHash fail: " + error.message));
+            this.errors.push("checkUserHash fail: ",error);
+            reject(this.errors);
 
         }
     })

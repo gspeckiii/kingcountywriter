@@ -3,7 +3,12 @@ const PasswordReset= require('../models/PasswordReset')
 const sendgrid = require('@sendgrid/mail')
 sendgrid.setApiKey(process.env.SENDGRIDAPIKEY)
 
-
+exports.viewPasswordReset = function(req,res) {
+    res.render('password-reset')
+  }
+  exports.viewPasswordResetPassword = function(req,res) {
+    res.render('create-reset-password')
+  }
 
 
 
@@ -24,7 +29,6 @@ sendgrid.setApiKey(process.env.SENDGRIDAPIKEY)
             })
             .then(() => {
                 // req.flash("success", "New pin successfully created.")
-                console.log("userId " + userId)
                 res.render('password-reset-password', {userId:userId});
             })
             .catch((error) => {
@@ -33,27 +37,27 @@ sendgrid.setApiKey(process.env.SENDGRIDAPIKEY)
             });
         })
         .catch(function(e) {
-            console.error(e);
-            res.status(500).send(e);
-        });
+            req.flash('errors', e)
+            req.session.save(function() {
+              res.redirect('/password-reset')
+            })
+          })
 }
 
 
 exports.setPassword = function(req, res) {
-    console.log("in controller");
     const passwordReset = new PasswordReset(req.body);
-    console.log(req.body);
-    
+
     passwordReset.setPassword()
         .then(() => {
-            console.log("succeed in set password");
-            // req.flash("success", "Password successfully updated.");
+            req.flash("success", "Password successfully updated.");
             res.redirect("/");
         })
-        .catch((error) => {
-            console.error("failed in controller:", error);
-            // req.flash("errors", "You do not have permission to perform that action.");
-            res.redirect("/");
-        });
+        .catch(function(errors) {
+    
+            req.session.save(function() {
+                res.render('password-reset-password', { userId: req.body.userId ,errors:this.errors});
+            }.bind(passwordReset)); // bind the value of `this` to the `passwordReset` instance
+        })
 }
 

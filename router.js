@@ -33,12 +33,11 @@ router.post('/addFollow/:username', userController.mustBeLoggedIn, followControl
 router.post('/removeFollow/:username', userController.mustBeLoggedIn, followController.removeFollow)
 
 //password reset routes
-router.get('/passwordReset', (req, res) => {
-    res.render('password-reset', { csrfToken: req.csrfToken() });
-  });
-  
-  router.post('/passwordReset', passwordResetController.passwordReset);
+router.get('/password-reset',passwordResetController.viewPasswordReset )
+router.get('/password-reset-password',passwordResetController.viewPasswordResetPassword )
+  //resetting of password post routes
+router.post('/passwordReset', passwordResetController.passwordReset);
+router.post('/passwordResetPassword',passwordResetController.setPassword)
 
-  router.get('/password-reset-password')
-  router.post('/password-reset-password',passwordResetController.setPassword)
+
 module.exports = router
